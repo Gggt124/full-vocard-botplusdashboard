@@ -1,0 +1,87 @@
+server:
+  port: 2333
+  address: 0.0.0.0
+
+plugins:
+  youtube:
+    enabled: true
+    allowSearch: true
+    allowDirectVideoIds: true
+    allowDirectPlaylistIds: true
+    clients:
+      - MUSIC
+      - ANDROID_MUSIC
+      - WEB
+      - MWEB
+      - TV
+      - ANDROID_VR
+      - IOS
+    oauth:
+      enabled: true
+      refreshToken: "${YOUTUBE_OAUTH_REFRESH_TOKEN:}"
+      skipInitialization: true
+
+    remoteCipher:
+      url: "http://[::1]:8001"
+      password: "eouc2pn8-IcnqIYxQRimPaLQSWrMs-Yn"
+      userAgent: "vocard"
+
+    pot:
+      token: "${YOUTUBE_POT_TOKEN:}"
+      visitorData: "${YOUTUBE_POT_VISITOR_DATA:}"
+
+    ratelimit:
+      ipBlocks:
+        - "2600:1900:4080:5ba::/64"
+      strategy: "RotateOnBan"
+      searchTriggersFail: true
+      retryLimit: 2
+
+lavalink:
+  plugins:
+    - dependency: "dev.lavalink.youtube:youtube-plugin:1.18.2"
+      repository: "https://maven.lavalink.dev/releases"
+      snapshot: false
+  server:
+    password: "youshallnotpass"
+    ratelimit:
+      ipBlocks:
+        - "2600:1900:4080:5ba::/64"
+      strategy: "RotateOnBan"
+      searchTriggersFail: true
+      retryLimit: 2
+    sources:
+      youtube: false
+      bandcamp: true
+      soundcloud: true
+      twitch: true
+      vimeo: true
+      mixer: true
+      http: true
+      local: false
+    bufferDurationMs: 400
+    frameBufferDurationMs: 5000
+    opusEncodingQuality: 10
+    resamplingQuality: LOW
+    trackStuckThresholdMs: 10000
+    useSeekGhosting: true
+    youtubePlaylistLoadLimit: 6
+    playerUpdateInterval: 5
+    youtubeSearchEnabled: true
+    soundcloudSearchEnabled: true
+    gcWarningThreshold: 1073741824
+
+spring:
+  main:
+    banner-mode: log
+    allow-bean-definition-overriding: true
+  server:
+    max-http-request-header-size: 16KB
+
+logging:
+  file:
+    max-history: 30
+    max-size: 1GB
+  path: ./logs/
+  level:
+    dev.lavalink.youtube: DEBUG

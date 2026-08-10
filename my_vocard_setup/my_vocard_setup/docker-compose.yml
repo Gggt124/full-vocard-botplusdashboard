@@ -1,0 +1,94 @@
+services:
+  lavalink:
+    image: ghcr.io/lavalink-devs/lavalink:4
+    container_name: vocard-lavalink
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./lavalink/application.yml:/opt/Lavalink/application.yml
+      - lavalink-logs:/opt/Lavalink/logs
+    env_file:
+      - .env
+    environment:
+      - JAVA_OPTS=-Xms512M -Xmx1G
+    healthcheck:
+      test: ["CMD", "curl", "-f", "-H", "Authorization: youshallnotpass", "http://127.0.0.1:2333/v4/info"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  ytcipher:
+    image: ghcr.io/kikkia/yt-cipher:master
+    container_name: vocard-ytcipher
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - "HOST=::"
+      - API_TOKEN=eouc2pn8-IcnqIYxQRimPaLQSWrMs-Yn
+      - OVERRIDE_PLAYER_VARIANT=IAS
+      - MAX_THREADS=4
+
+  bgutil:
+    image: ghcr.io/jim60105/bgutil-pot:latest
+    container_name: vocard-bgutil
+    restart: unless-stopped
+    network_mode: host
+
+  mongo:
+    image: mongo:7
+    container_name: vocard-mongo
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  vocard:
+    build: .
+    container_name: vocard-bot
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./settings.json:/app/settings.json
+      - ./voicelink:/app/voicelink
+      - ./cogs:/app/cogs
+      - ./function.py:/app/function.py
+      - ./main.py:/app/main.py
+    env_file:
+      - .env
+    environment:
+      - MONGODB_URL=mongodb://mongo:27017
+      - MONGODB_NAME=vocard
+    depends_on:
+      mongo:
+        condition: service_healthy
+      lavalink:
+        condition: service_healthy
+
+  dashboard:
+    image: ghcr.io/chocomeow/vocard-dashboard:latest
+    container_name: vocard-dashboard
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - /home/copter2737/Vocard-Dashboard:/app
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: vocard-cloudflared
+    restart: unless-stopped
+    network_mode: host
+    command: tunnel --no-autoupdate run --token eyJhIjoiMTkwYTQ3OTczMjVjNTJkNzY1ZDFkOTRmYjcxM2U1MjQiLCJ0IjoiOTM1ZDM2NzAtMDVmNi00YzQ4LTllNDktZDg5MDY0ODM5MWVlIiwicyI6Ik5EWTNOamcwTTJZdE9UUmlPUzAwTW1Oa0xXSmlZek10WkdNNU5HTmxPRE0wTURNMCJ9
+    depends_on:
+      - dashboard
+
+volumes:
+  mongo-data:
+  lavalink-logs:
