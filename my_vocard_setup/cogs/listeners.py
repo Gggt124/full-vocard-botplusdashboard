@@ -31,6 +31,11 @@ from discord.ext import commands
 
 from voicelink import MongoDBHandler, Config
 from voicelink.utils import TempCtx
+from voicelink.invite_permissions import (
+    decide_join_authorization,
+    resolve_leave_channel,
+)
+
 
 class Listeners(commands.Cog):
     """Music Cog."""
@@ -225,5 +230,101 @@ class Listeners(commands.Cog):
                 "isJoined": is_joined
             })
 
+    @commands.Cog.listener()
+    async def on_guild_join(self, guild: discord.Guild) -> None:
+        owners = Config().bot_access_user
+        runtime_inviters = getattr(self.bot, "runtime_inviters", set())
+
+        inviter_id: int | None = None
+        audit_failed = False
+        audit_error: Exception | None = None
+
+        # Initial delay for audit-log propagation, then up to 3 attempts
+        await asyncio.sleep(2.5)
+        for attempt in range(3):
+            try:
+                async for entry in guild.audit_logs(
+                    limit=5, action=discord.AuditLogAction.bot_add
+                ):
+                    if entry.user is not None and entry.target and entry.target.id == self.bot.user.id:
+                        inviter_id = entry.user.id
+                        break
+                if inviter_id is not None:
+                    break
+            except discord.Forbidden as e:
+                audit_failed = True
+                audit_error = e
+                break
+            except Exception as e:
+                audit_failed = True
+                audit_error = e
+                break
+
+            if attempt < 2:
+                await asyncio.sleep(2)
+
+        if inviter_id is None and not audit_failed:
+            # Entry never appeared after retries — treat as audit failure / fallback
+            audit_failed = True
+
+        if audit_failed:
+            func.logger.warning(
+                "Audit log fetch failed for guild %s(%s); using guild-owner fallback. Error: %s",
+                guild.name,
+                guild.id,
+                audit_error or "Log entry not found after retries",
+            )
+
+        authorized, source = decide_join_authorization(
+            inviter_id=inviter_id,
+            guild_owner_id=guild.owner_id,
+            owners=owners,
+            runtime_inviters=runtime_inviters,
+            audit_failed=audit_failed,
+        )
+
+        if authorized:
+            resolved_inviter = (
+                guild.owner_id if source == "guild_owner_fallback" else inviter_id
+            )
+            func.logger.info(
+                "Authorized bot join to guild %s(%s) via %s (inviter_id=%s)",
+                guild.name,
+                guild.id,
+                source,
+                resolved_inviter,
+            )
+            return
+
+        leave_channel = resolve_leave_channel(guild)
+        if leave_channel is not None:
+            try:
+                await leave_channel.send(
+                    "This bot is restricted to authorized inviters only."
+                )
+            except discord.Forbidden:
+                pass
+            except Exception:
+                pass
+
+        func.logger.warning(
+            "Unauthorized bot join to guild %s(%s); leaving. inviter_id=%s source=%s",
+            guild.name,
+            guild.id,
+            inviter_id,
+            source,
+        )
+        try:
+            await guild.leave()
+        except Exception as e:
+            func.logger.error(
+                "Failed to leave unauthorized guild %s(%s): %s",
+                guild.name,
+                guild.id,
+                e,
+            )
+
+
 async def setup(bot: commands.Bot) -> None:
     await bot.add_cog(Listeners(bot))
+

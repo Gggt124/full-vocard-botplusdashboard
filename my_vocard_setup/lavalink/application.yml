@@ -8,22 +8,26 @@ plugins:
     allowSearch: true
     allowDirectVideoIds: true
     allowDirectPlaylistIds: true
+    # Query order matters: first success wins.
+    # On datacenter IPs, ANDROID_MUSIC/IOS often return LOGIN_REQUIRED without
+    # throwing hard enough for fallback — put OAuth TV + WEB(+poToken) first.
     clients:
-      - MUSIC
-      - ANDROID_MUSIC
-      - WEB
-      - MWEB
       - TV
+      - WEB
+      - WEBEMBEDDED
+      - MWEB
       - ANDROID_VR
       - IOS
+      - MUSIC
     oauth:
       enabled: true
       refreshToken: "${YOUTUBE_OAUTH_REFRESH_TOKEN:}"
       skipInitialization: true
 
     remoteCipher:
-      url: "http://[::1]:8001"
-      password: "eouc2pn8-IcnqIYxQRimPaLQSWrMs-Yn"
+      # Empty defaults fail soft — set REMOTE_CIPHER_URL / YT_CIPHER_API_TOKEN in .env
+      url: "${REMOTE_CIPHER_URL:}"
+      password: "${YT_CIPHER_API_TOKEN:}"
       userAgent: "vocard"
 
     pot:
@@ -31,8 +35,10 @@ plugins:
       visitorData: "${YOUTUBE_POT_VISITOR_DATA:}"
 
     ratelimit:
-      ipBlocks:
-        - "2600:1900:4080:5ba::/64"
+      # Empty list = no IP rotation (required when VPS has only one IP).
+      # To enable rotation, replace with a real CIDR from .env, e.g. - "${IP_BLOCKS}"
+      # Do NOT leave a blank "${IP_BLOCKS:}" entry — Lavalink rejects invalid CIDR "".
+      ipBlocks: []
       strategy: "RotateOnBan"
       searchTriggersFail: true
       retryLimit: 2
@@ -45,8 +51,7 @@ lavalink:
   server:
     password: "youshallnotpass"
     ratelimit:
-      ipBlocks:
-        - "2600:1900:4080:5ba::/64"
+      ipBlocks: []
       strategy: "RotateOnBan"
       searchTriggersFail: true
       retryLimit: 2

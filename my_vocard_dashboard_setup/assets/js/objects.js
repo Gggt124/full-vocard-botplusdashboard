@@ -842,8 +842,9 @@ const methods = {
                 <div class="server-cards">
                     ${Object.entries(data.inviteGuilds)
                 .map(
+                    // Keep in sync with Python BOT_INVITE_PERMISSIONS (2184572096)
                     ([serverId, serverData]) => `
-                        <a href="${`https://discord.com/oauth2/authorize?client_id=${player.selectedBot.id}&permissions=2184538176&scope=bot%20applications.commands`}" target="_blank" rel="noopener noreferrer">
+                        <a href="${`https://discord.com/oauth2/authorize?client_id=${player.selectedBot.id}&permissions=2184572096&scope=bot%20applications.commands`}" target="_blank" rel="noopener noreferrer">
                             ${createServerCard(serverId, serverData, true)}
                         </a>
                     `

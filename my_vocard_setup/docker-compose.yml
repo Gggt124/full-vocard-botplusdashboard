@@ -23,9 +23,11 @@ services:
     container_name: vocard-ytcipher
     restart: unless-stopped
     network_mode: host
+    env_file:
+      - .env
     environment:
-      - "HOST=::"
-      - API_TOKEN=eouc2pn8-IcnqIYxQRimPaLQSWrMs-Yn
+      - HOST=${YT_CIPHER_HOST:?Set YT_CIPHER_HOST in .env}
+      - API_TOKEN=${YT_CIPHER_API_TOKEN:?Set YT_CIPHER_API_TOKEN in .env}
       - OVERRIDE_PLAYER_VARIANT=IAS
       - MAX_THREADS=4
 
@@ -36,13 +38,14 @@ services:
     network_mode: host
 
   mongo:
-    image: mongo:7
+    # 4.4: last official image that runs without AVX (common on budget VPS CPUs)
+    image: mongo:4.4
     container_name: vocard-mongo
     restart: unless-stopped
     volumes:
       - mongo-data:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      test: ["CMD", "mongo", "--quiet", "--eval", "db.adminCommand('ping').ok"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -63,13 +66,16 @@ services:
     env_file:
       - .env
     environment:
-      - MONGODB_URL=mongodb://mongo:27017
-      - MONGODB_NAME=vocard
+      # Defaults keep compose-up working if .env omits Mongo keys; .env overrides win.
+      - MONGODB_URL=${MONGODB_URL:-mongodb://mongo:27017}
+      - MONGODB_NAME=${MONGODB_NAME:-vocard}
     depends_on:
       mongo:
         condition: service_healthy
       lavalink:
         condition: service_healthy
+      dashboard:
+        condition: service_started
 
   dashboard:
     image: ghcr.io/chocomeow/vocard-dashboard:latest
@@ -78,14 +84,16 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - /home/copter2737/Vocard-Dashboard:/app
+      - ../my_vocard_dashboard_setup:/app
 
   cloudflared:
     image: cloudflare/cloudflared:latest
     container_name: vocard-cloudflared
     restart: unless-stopped
     network_mode: host
-    command: tunnel --no-autoupdate run --token eyJhIjoiMTkwYTQ3OTczMjVjNTJkNzY1ZDFkOTRmYjcxM2U1MjQiLCJ0IjoiOTM1ZDM2NzAtMDVmNi00YzQ4LTllNDktZDg5MDY0ODM5MWVlIiwicyI6Ik5EWTNOamcwTTJZdE9UUmlPUzAwTW1Oa0xXSmlZek10WkdNNU5HTmxPRE0wTURNMCJ9
+    env_file:
+      - .env
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARED_TOKEN:?Set CLOUDFLARED_TOKEN in .env}
     depends_on:
       - dashboard
 
