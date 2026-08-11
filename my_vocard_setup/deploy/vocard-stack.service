@@ -1,0 +1,21 @@
+[Unit]
+Description=Vocard stack (docker compose up with healthchecks)
+Documentation=file://__VOCARD_SETUP_DIR__/docker-compose.yml
+After=docker.service network-online.target
+Requires=docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=__VOCARD_SETUP_DIR__
+Environment=COMPOSE_PROJECT_NAME=my_vocard_setup
+# Give docker a moment after daemon start on cold boot.
+ExecStartPre=/bin/sleep 5
+ExecStart=/usr/bin/docker compose up -d --remove-orphans
+ExecStop=/usr/bin/docker compose stop
+TimeoutStartSec=0
+TimeoutStopSec=120
+
+[Install]
+WantedBy=multi-user.target

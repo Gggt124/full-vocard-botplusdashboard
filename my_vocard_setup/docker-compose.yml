@@ -38,13 +38,14 @@ services:
     network_mode: host
 
   mongo:
-    image: mongo:7
+    # 4.4: last official image that runs without AVX (common on budget VPS CPUs)
+    image: mongo:4.4
     container_name: vocard-mongo
     restart: unless-stopped
     volumes:
       - mongo-data:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      test: ["CMD", "mongo", "--quiet", "--eval", "db.adminCommand('ping').ok"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -81,7 +82,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - /home/copter2737/Vocard-Dashboard:/app
+      - ../my_vocard_dashboard_setup:/app
 
   cloudflared:
     image: cloudflare/cloudflared:latest

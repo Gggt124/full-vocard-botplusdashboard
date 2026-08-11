@@ -109,7 +109,9 @@ def test_lavalink_yml_uses_env_placeholders():
     text = LAVALINK_YML.read_text(encoding="utf-8")
     assert "${REMOTE_CIPHER_URL" in text
     assert "${YT_CIPHER_API_TOKEN" in text
-    assert "${IP_BLOCKS" in text
+    # Empty ipBlocks: [] is valid when the VPS has no rotatable CIDR.
+    # Enabling rotation uses - "${IP_BLOCKS}" (must not be blank "").
+    assert ("${IP_BLOCKS" in text) or ("ipBlocks: []" in text)
     assert "${YOUTUBE_OAUTH_REFRESH_TOKEN" in text
     assert "${YOUTUBE_POT_TOKEN" in text
     assert "${YOUTUBE_POT_VISITOR_DATA" in text
