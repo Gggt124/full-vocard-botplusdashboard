@@ -74,6 +74,8 @@ services:
         condition: service_healthy
       lavalink:
         condition: service_healthy
+      dashboard:
+        condition: service_started
 
   dashboard:
     image: ghcr.io/chocomeow/vocard-dashboard:latest
