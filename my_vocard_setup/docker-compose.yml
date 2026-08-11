@@ -64,6 +64,10 @@ services:
       - ./main.py:/app/main.py
     env_file:
       - .env
+    environment:
+      # Defaults keep compose-up working if .env omits Mongo keys; .env overrides win.
+      - MONGODB_URL=${MONGODB_URL:-mongodb://mongo:27017}
+      - MONGODB_NAME=${MONGODB_NAME:-vocard}
     depends_on:
       mongo:
         condition: service_healthy

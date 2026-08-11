@@ -90,6 +90,12 @@ def test_compose_wires_cipher_and_cloudflared_from_env():
     assert "CLOUDFLARED_TOKEN:?Set CLOUDFLARED_TOKEN in .env" in text
 
 
+def test_compose_keeps_mongodb_defaults_with_env_override():
+    text = COMPOSE_FILE.read_text(encoding="utf-8")
+    assert "MONGODB_URL=${MONGODB_URL:-mongodb://mongo:27017}" in text
+    assert "MONGODB_NAME=${MONGODB_NAME:-vocard}" in text
+
+
 LAVALINK_YML = SETUP_DIR / "lavalink" / "application.yml"
 
 
@@ -143,6 +149,11 @@ def test_config_reads_token_fields_from_env_fallback(monkeypatch):
             "mongodb_name": "",
         }
     )
-    assert cfg.token == "env-bot-token"
-    assert cfg.client_id == 123456789012345678
-    assert cfg.genius_token == "env-genius-token"
+    try:
+        assert cfg.token == "env-bot-token"
+        assert cfg.client_id == 123456789012345678
+        assert cfg.genius_token == "env-genius-token"
+        assert cfg.mongodb_url == "mongodb://localhost:27017"
+        assert cfg.mongodb_name == "vocard_test"
+    finally:
+        Config._instance = None

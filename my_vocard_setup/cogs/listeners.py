@@ -314,7 +314,16 @@ class Listeners(commands.Cog):
             inviter_id,
             source,
         )
-        await guild.leave()
+        try:
+            await guild.leave()
+        except Exception as e:
+            func.logger.error(
+                "Failed to leave unauthorized guild %s(%s): %s",
+                guild.name,
+                guild.id,
+                e,
+            )
+
 
 async def setup(bot: commands.Bot) -> None:
     await bot.add_cog(Listeners(bot))

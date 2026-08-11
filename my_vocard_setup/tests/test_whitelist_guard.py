@@ -145,6 +145,8 @@ def test_on_guild_join_logs_clear_warning_on_audit_timeout():
         guild.id = 111
         guild.owner_id = 999
         guild.audit_logs.return_value = AsyncIter([])
+        guild.system_channel = None
+        guild.text_channels = []
         guild.leave = AsyncMock()
 
         with patch("asyncio.sleep", AsyncMock()), \
@@ -162,5 +164,43 @@ def test_on_guild_join_logs_clear_warning_on_audit_timeout():
                 111,
                 "Log entry not found after retries",
             )
+            guild.leave.assert_awaited_once()
+
+    asyncio.run(_run())
+
+
+def test_on_guild_join_unauthorized_sends_leave_message_then_leaves():
+    async def _run():
+        bot = MagicMock()
+        bot.user.id = 12345
+        bot.runtime_inviters = set()
+
+        listeners = Listeners.__new__(Listeners)
+        listeners.bot = bot
+
+        leave_channel = MagicMock()
+        leave_channel.send = AsyncMock()
+
+        guild = MagicMock()
+        guild.name = "TestGuild"
+        guild.id = 111
+        guild.owner_id = 999
+        guild.audit_logs.return_value = AsyncIter([])
+        guild.system_channel = leave_channel
+        guild.text_channels = []
+        guild.leave = AsyncMock()
+
+        with patch("asyncio.sleep", AsyncMock()), \
+             patch("cogs.listeners.Config") as mock_config, \
+             patch("cogs.listeners.decide_join_authorization") as mock_decide:
+            mock_config.return_value.bot_access_user = [100]
+            mock_decide.return_value = (False, "rejected")
+
+            await listeners.on_guild_join(guild)
+
+            leave_channel.send.assert_awaited_once_with(
+                "This bot is restricted to authorized inviters only."
+            )
+            guild.leave.assert_awaited_once()
 
     asyncio.run(_run())
