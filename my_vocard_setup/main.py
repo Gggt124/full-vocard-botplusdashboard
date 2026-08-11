@@ -69,6 +69,7 @@ class Vocard(commands.Bot):
         super().__init__(*args, **kwargs)
 
         self.ipc_client: IPCClient
+        self.runtime_inviters: set[int] = set()
 
     async def on_message(self, message: discord.Message, /) -> None:
         # Ignore messages from bots or DMs
@@ -186,14 +187,29 @@ class CommandCheck(discord.app_commands.CommandTree):
     async def interaction_check(self, interaction: discord.Interaction, /) -> bool:
         if interaction.type == discord.InteractionType.application_command:
             if not interaction.guild:
-                await interaction.response.send_message("This command can only be used in guilds!")
+                if interaction.command and interaction.command.qualified_name.startswith("whitelist"):
+                    if interaction.user.id in Config().bot_access_user:
+                        return True
+                    func.logger.warning(
+                        "Unauthorized /whitelist attempt by user %s in %s",
+                        interaction.user.id,
+                        "DM",
+                    )
+                    await interaction.response.send_message(
+                        "You are not able to use this command!", ephemeral=True
+                    )
+                    return False
+                await interaction.response.send_message("This command can only be used in guilds!", ephemeral=True)
                 return False
 
             channel_perm = interaction.channel.permissions_for(interaction.guild.me)
             if not channel_perm.read_messages or not channel_perm.send_messages:
-                await interaction.response.send_message("I don't have permission to read or send messages in this channel.", ephemeral=True)
+                await interaction.response.send_message(
+                    "I don't have permission to read or send messages in this channel.",
+                    ephemeral=True,
+                )
                 return False
-            
+
         return True
 
 async def get_prefix(bot: commands.Bot, message: discord.Message) -> str:

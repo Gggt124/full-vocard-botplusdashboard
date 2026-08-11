@@ -843,7 +843,7 @@ const methods = {
                     ${Object.entries(data.inviteGuilds)
                 .map(
                     ([serverId, serverData]) => `
-                        <a href="${`https://discord.com/oauth2/authorize?client_id=${player.selectedBot.id}&permissions=2184538176&scope=bot%20applications.commands`}" target="_blank" rel="noopener noreferrer">
+                        <a href="${`https://discord.com/oauth2/authorize?client_id=${player.selectedBot.id}&permissions=2184572096&scope=bot%20applications.commands`}" target="_blank" rel="noopener noreferrer">
                             ${createServerCard(serverId, serverData, true)}
                         </a>
                     `

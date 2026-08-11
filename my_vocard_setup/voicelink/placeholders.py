@@ -30,6 +30,7 @@ from discord.ext import commands
 from typing import TYPE_CHECKING, List, Callable
 
 from .config import Config
+from .invite_permissions import BOT_INVITE_PERMISSIONS
 from .utils import format_ms
 
 if TYPE_CHECKING:
@@ -71,7 +72,7 @@ class PlayerPlaceholder:
             "default_embed_color": self.default_embed_color,
             "bot_icon": self.bot_icon,
             "server_invite_link": Config().invite_link,
-            "invite_link": f"https://discord.com/oauth2/authorize?client_id={self.bot.user.id}&permissions=2184260928&scope=bot%20applications.commands"
+            "invite_link": f"https://discord.com/oauth2/authorize?client_id={self.bot.user.id}&permissions={BOT_INVITE_PERMISSIONS}&scope=bot%20applications.commands"
         }
 
         self.regexes = {
