@@ -22,8 +22,8 @@ plugins:
       skipInitialization: true
 
     remoteCipher:
-      url: "http://[::1]:8001"
-      password: "eouc2pn8-IcnqIYxQRimPaLQSWrMs-Yn"
+      url: "${REMOTE_CIPHER_URL:}"
+      password: "${YT_CIPHER_API_TOKEN:}"
       userAgent: "vocard"
 
     pot:
@@ -32,7 +32,7 @@ plugins:
 
     ratelimit:
       ipBlocks:
-        - "2600:1900:4080:5ba::/64"
+        - "${IP_BLOCKS:}"
       strategy: "RotateOnBan"
       searchTriggersFail: true
       retryLimit: 2
@@ -46,7 +46,7 @@ lavalink:
     password: "youshallnotpass"
     ratelimit:
       ipBlocks:
-        - "2600:1900:4080:5ba::/64"
+        - "${IP_BLOCKS:}"
       strategy: "RotateOnBan"
       searchTriggersFail: true
       retryLimit: 2
